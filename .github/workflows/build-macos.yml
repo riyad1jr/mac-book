@@ -7,6 +7,10 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+concurrency:
+  group: macos-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: macos-latest
@@ -15,12 +19,19 @@ jobs:
       run:
         working-directory: ./app
 
+    env:
+      # No Apple Developer certificate in CI: build unsigned so
+      # electron-builder does not fail trying to sign.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # Keep electron-builder from attempting to publish anywhere.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -29,18 +40,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build app (Vite + TypeScript + Server)
+      - name: Build app (TypeScript + Vite + server bundle + native runtime)
         run: npm run build
 
-      - name: Build macOS app (DMG)
+      - name: Verify build output
+        run: |
+          test -f dist/index.html
+          test -f build/server.cjs
+          test -d build/node_modules/better-sqlite3
+
+      - name: Package macOS app (DMG)
         run: npx electron-builder --mac dmg --publish never
 
-      - name: Upload build artifacts
+      - name: Show produced files
+        if: always()
+        run: ls -lh release || true
+
+      - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
           name: Mame-Inventory-macOS
-          path: |
-            app/release/*.dmg
-            app/dist/*.dmg
-          if-no-files-found: warn
+          path: app/release/*.dmg
+          if-no-files-found: error
           retention-days: 30
