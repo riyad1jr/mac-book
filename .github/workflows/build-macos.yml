@@ -1,4 +1,4 @@
-﻿name: Build Windows Installer
+﻿name: Build macOS
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: macos-latest
 
     defaults:
       run:
@@ -32,15 +32,15 @@ jobs:
       - name: Build app (Vite + TypeScript + Server)
         run: npm run build
 
-      - name: Build Windows installer (NSIS + Portable)
-        run: npm run dist:win
+      - name: Build macOS app (DMG)
+        run: npx electron-builder --mac dmg --publish never
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Mame-Inventory-Windows
+          name: Mame-Inventory-macOS
           path: |
-            app/tmp-release/*.exe
-            app/release/*.exe
+            app/release/*.dmg
+            app/dist/*.dmg
           if-no-files-found: warn
           retention-days: 30
