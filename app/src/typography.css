@@ -1,0 +1,152 @@
+/* ---------------------------------------------------------------
+   Type scale.
+
+   This file used to be a flat list of selectors force-bumped to
+   11/12/13/14px, which contradicted styles.css and even itself
+   (.breadcrumb, .date-button and .filter-button each appeared twice
+   at two different sizes). Larger text was being pushed into boxes
+   sized for 9-10px text, so it overflowed.
+
+   Now: one scale, defined once as variables, plus the matching
+   container fixes in layout-fixes.css so boxes grow with the text
+   instead of clipping it.
+   --------------------------------------------------------------- */
+
+:root {
+  --fs-micro: 11px;   /* pill text, table meta, captions */
+  --fs-small: 12px;   /* secondary labels, helper text  */
+  --fs-body: 13px;    /* default UI text, tables        */
+  --fs-med: 14px;     /* form inputs, buttons, nav      */
+  --fs-lg: 16px;      /* panel titles                   */
+  --fs-xl: 22px;      /* metric values                  */
+  --fs-display: 32px; /* page headings                  */
+}
+
+/* ---- micro ---- */
+.eyebrow,
+.purchase-product small,
+.stock-info small,
+.stock-qty small,
+.receipt-copy small,
+.report-metric small,
+.report-banner small,
+.notifications-dropdown li small,
+.lang-option small,
+.inventory-toolbar > span,
+.directory-count,
+.sales-status,
+.mini-product,
+.product-avatar,
+.customer-avatar,
+.user-avatar,
+.quantity-pill,
+.paid-pill,
+.credit-pill,
+th {
+  font-size: var(--fs-micro);
+}
+
+/* ---- small ---- */
+.metric-card span,
+.metric-card small,
+.page-heading p,
+.panel-header p,
+.modal-heading p,
+.breadcrumb,
+.report-summary-list span,
+.report-metric span,
+.sale-summary span,
+.settings-list span,
+.tip-card p,
+.form-message,
+.pagination-label,
+.workspace-switcher,
+.sidebar-footer,
+.login-help,
+.product-option-meta {
+  font-size: var(--fs-small);
+}
+
+/* ---- body ---- */
+table,
+td,
+.search-box input,
+.purchase-product b,
+.stock-info b,
+.receipt-copy b,
+.receipt-row > strong,
+.report-summary-list strong,
+.text-button,
+.tip-card b,
+.empty-state,
+.notification-empty,
+.notifications-dropdown li,
+.settings-list div,
+.toast,
+.profile-button,
+.alert-count,
+.filter-button,
+.date-button,
+.product-option,
+.product-picked b {
+  font-size: var(--fs-body);
+}
+
+/* ---- medium: anything the user clicks or types into ---- */
+.nav-item,
+.primary-button,
+.secondary-button,
+.branch-picker,
+.purchase-period-select,
+.lang-button,
+.modal label,
+.modal input,
+.modal select,
+.settings-panel input,
+.report-period,
+.report-period select,
+.report-card,
+.user-name,
+.form-total,
+.toggle,
+.detail-button,
+.segmented-control button {
+  font-size: var(--fs-med);
+}
+
+/* ---- headings ---- */
+.panel-header h2,
+.placeholder-panel h2 {
+  font-size: var(--fs-lg);
+}
+.metric-card strong,
+.report-metric strong,
+.report-banner strong,
+.sale-summary strong {
+  font-size: var(--fs-xl);
+}
+.page-heading h1,
+.section-placeholder h1,
+.inventory-page h1,
+.modal-heading h2 {
+  font-size: var(--fs-display);
+  letter-spacing: -1px;
+}
+
+/* Amharic (Ethiopic) glyphs have a taller x-height and no lowercase,
+   so they read cramped at Latin sizes. Nudge the scale up and drop
+   the tight Latin letter-spacing and uppercasing, which do nothing
+   useful for Ethiopic and only widen the text. */
+[lang='am'] {
+  --fs-micro: 12px;
+  --fs-small: 13px;
+  --fs-body: 14px;
+  --fs-med: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 23px;
+  --fs-display: 31px;
+}
+[lang='am'] * {
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}

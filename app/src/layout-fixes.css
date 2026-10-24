@@ -1,0 +1,784 @@
+/* ---------------------------------------------------------------
+   Layout robustness.
+
+   Imported last. Everything here exists so the UI survives things
+   the original CSS assumed would never happen: a wider fallback
+   font, Amharic text, a long product name, a 1366x768 laptop, or
+   Windows display scaling at 125%/150%.
+   --------------------------------------------------------------- */
+
+/* --- 1. Controls size to their content -----------------------
+   These all had a hard `height`, so any text taller or wider than
+   the original Inter-at-12px overflowed the border. Swap to
+   min-height + real padding so they grow instead. */
+.primary-button,
+.secondary-button,
+.branch-picker,
+.date-button,
+.filter-button,
+.lang-button,
+.report-period,
+.purchase-period-select,
+.search-box,
+.modal input,
+.modal select,
+.settings-panel input,
+.segmented-control button,
+.detail-button {
+  height: auto;
+  min-height: 40px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  line-height: 1.3;
+}
+
+.filter-button,
+.date-button,
+.search-box,
+.segmented-control button {
+  min-height: 34px;
+}
+
+/* Buttons are flex containers; stop the label being squeezed to
+   zero width next to its icon, and let icons keep their size. */
+.primary-button,
+.secondary-button,
+.branch-picker,
+.lang-button,
+.filter-button,
+.date-button {
+  white-space: nowrap;
+  flex: none;
+}
+.primary-button svg,
+.secondary-button svg,
+.branch-picker svg,
+.lang-button svg,
+.nav-item svg,
+.metric-icon svg {
+  flex: none;
+}
+
+/* Fixed-size circles/squares that hold text: never let them
+   shrink, and let the number inside breathe. */
+.alert-count,
+.topbar-zoom-value,
+.user-avatar,
+.workspace-dot,
+.mini-product,
+.product-avatar,
+.customer-avatar,
+.receipt-icon,
+.help-icon,
+.tip-icon,
+.placeholder-icon,
+.metric-icon,
+.brand-mark {
+  flex: none;
+}
+.topbar-zoom-value {
+  min-width: 46px;
+}
+.alert-count {
+  padding: 0 7px;
+  height: auto;
+  min-height: 25px;
+}
+
+/* --- 2. Tables scroll instead of being cut off ---------------
+   .table-wrap only got overflow-x:auto inside the max-width:700px
+   media query, while these panels carry overflow:hidden. On a
+   desktop that meant long rows were silently clipped at the card
+   edge with no scrollbar. */
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+.inventory-panel,
+.customers-panel,
+.expenses-panel,
+.report-table-panel,
+.purchases-panel,
+.sales-panel,
+.panel {
+  overflow: visible;
+  min-width: 0;
+}
+/* Keep the rounded corners the `overflow:hidden` was there for,
+   without using it to clip content. */
+.panel > .table-wrap:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Only the long free-text columns wrap. Everything else - money,
+   quantities, dates, SKUs - stays on one line, because breaking
+   "ETB 1,234,567.89" across two lines is worse than scrolling.
+   The table can now scroll horizontally (see .table-wrap above),
+   which is what makes keeping these on one line safe. */
+td,
+th {
+  white-space: nowrap;
+}
+td .purchase-product,
+td .stock-info,
+td .receipt-copy {
+  min-width: 0;
+}
+td .purchase-product b,
+td .stock-info b,
+td .receipt-copy b,
+td .product-name,
+td .customer-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Give the name column room to breathe before the rest scrolls. */
+td .purchase-product b,
+td .stock-info b {
+  min-width: 14ch;
+}
+/* Money reads better aligned and never split mid-number. */
+.expense-out,
+td.right,
+.form-total strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Big headline figures are the one place a hard nowrap fails: a shop
+   with millions in stock produces "ETB 24,691,357.80", which is wider
+   than the card. Let the value shrink with the card, and if it still
+   does not fit, break at the space after the currency code - never
+   inside the digits. */
+.metric-card strong,
+.report-metric strong,
+.report-banner strong {
+  font-size: clamp(12px, 1.3vw + 0.25rem, var(--fs-xl));
+  letter-spacing: -0.3px;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* --- 3. The shell adapts to the actual window ---------------- */
+.sidebar {
+  width: clamp(200px, 17vw, 245px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.nav-item span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.main-content {
+  min-width: 0;
+  overflow-x: hidden;
+}
+.page-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+/* The right rail was a hard 295px. Below ~1250px total there was
+   no breakpoint, so the table column got crushed with nowhere to
+   go. Give it a real minimum and a breakpoint that catches it. */
+.content-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 295px);
+}
+/* Four metric cards need ~1000px of content width to hold a 13-digit
+   value each; below that, two rows of two reads better than clipping. */
+@media (max-width: 1600px) {
+  .metric-grid:not(.customer-metrics):not(.sales-page .metric-grid),
+  .report-metrics,
+  .expense-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 1250px) {
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .right-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  .metric-grid,
+  .report-metrics,
+  .expense-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .reports-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 900px) {
+  .right-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The page heading put the title and the action buttons in one
+   row with no wrapping, so the buttons ran off the right edge. */
+.page-heading {
+  flex-wrap: wrap;
+}
+.page-heading > div:first-child {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.page-heading h1 {
+  overflow-wrap: break-word;
+}
+.heading-actions,
+.inventory-toolbar,
+.table-toolbar,
+.topbar-actions {
+  flex-wrap: wrap;
+}
+.panel-header {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.panel-header h2 {
+  overflow-wrap: break-word;
+}
+
+/* Topbar: 70px fixed with nowrap meant the avatar and name were
+   the first things pushed off screen. */
+.topbar {
+  height: auto;
+  min-height: 70px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+}
+.breadcrumb {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.user-name {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 4. Modals ----------------------------------------------
+   Fixed 700px/880px widths overflowed on small or scaled screens,
+   and the grid forced two columns however narrow it got. */
+.modal,
+.wide-modal,
+.receipt-detail-modal {
+  width: min(100%, 700px);
+  max-width: 100%;
+  max-height: min(calc(100vh - 40px), 900px);
+}
+.wide-modal {
+  width: min(100%, 880px);
+}
+.modal-form,
+.modal-form-grid,
+.form-row,
+.sale-summary {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.modal-form-grid.vertical {
+  grid-template-columns: 1fr;
+}
+.modal label {
+  min-width: 0;
+}
+.modal input,
+.modal select {
+  width: 100%;
+  min-width: 0;
+}
+.modal-actions {
+  flex-wrap: wrap;
+}
+.form-total {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Dropdowns anchored to the right edge could sit off-screen. */
+.lang-dropdown,
+.notifications-dropdown {
+  max-width: calc(100vw - 32px);
+}
+.notifications-dropdown {
+  width: min(360px, calc(100vw - 32px));
+}
+
+/* --- 5. Metric cards ----------------------------------------- */
+.metric-card,
+.report-metric {
+  min-width: 0;
+}
+.metric-card > div,
+.metric-card span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.metric-card strong { min-width: 0; }
+.metric-card strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 6. Very small / heavily scaled windows ------------------ */
+@media (max-width: 700px) {
+  .table-wrap table,
+  .inventory-panel table {
+    min-width: 640px;
+  }
+}
+
+/* The close button is an icon square, not a text control - keep it
+   square rather than stretching it to the 40px min-height above. */
+.close-button {
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  align-self: flex-start;
+}
+
+/* Labels carry an optional "Optional" tag on its own line, which made
+   the input below it sit lower than the input in the next column.
+   Stretch each label to fill its grid cell and push the control to the
+   bottom, so inputs line up across columns regardless of label height. */
+.modal-form,
+.modal-form-grid,
+.form-row {
+  align-items: stretch;
+}
+.modal label {
+  height: 100%;
+}
+.modal label > input,
+.modal label > select,
+.modal label > textarea {
+  margin-top: auto;
+}
+
+/* --- 7. Zoom control -----------------------------------------
+   The percentage readout is now a button (click to reset to 100%),
+   so it needs the button defaults cleared. */
+.topbar-zoom-value {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 4px 2px;
+  border-radius: 5px;
+}
+.topbar-zoom-value:hover {
+  background: #e2e8f0;
+}
+.dark .topbar-zoom-value:hover {
+  background: #333;
+}
+
+/* --- 8. Dark mode contrast ------------------------------------
+   Several elements kept their light-theme ink colour (#1e293b) on a
+   dark panel, giving a contrast ratio of 1.0 - the text was there but
+   completely invisible. The dark block in styles.css whitelisted a few
+   specific `b` elements and missed the rest, so this covers them by
+   inheriting the themed colour instead of naming every selector. */
+.dark .user-name,
+.dark .quick-action b,
+.dark .activity-copy b,
+.dark .overview-note b,
+.dark .receipt-copy b,
+.dark .product-picked b,
+.dark .product-option-name,
+.dark .report-summary-list strong,
+.dark .receipt-row > strong,
+.dark .settings-list strong,
+.dark .settings-profile strong,
+.dark .sale-summary strong,
+.dark .receipt-detail-row strong,
+.dark .stock-info b,
+.dark .tip-card b,
+.dark .panel-header h2,
+.dark .page-heading h1 {
+  color: var(--ink);
+}
+
+/* Native <option> is drawn by the OS, so it needs an explicit pair;
+   inheriting leaves grey-on-grey in the open dropdown. */
+.dark select option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+/* The tip card keeps a light blue background in dark mode, so its
+   text must stay dark rather than inheriting white. */
+.dark .tip-card,
+.dark .tip-card b,
+.dark .tip-card p {
+  color: #7c2d12;
+}
+
+/* --- 9. Startup screen and save-status badge ------------------ */
+.startup-screen {
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+}
+.startup-screen.dark { background: #0f172a; }
+.startup-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 36px 40px;
+  max-width: 460px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.startup-card .brand { color: var(--ink); padding: 0 0 8px; }
+.startup-card h2 { margin: 6px 0 0; font-size: var(--fs-lg); }
+.startup-card p { margin: 0; color: var(--muted); font-size: var(--fs-body); line-height: 1.5; }
+.startup-detail {
+  font-family: 'DM Mono', 'Noto Sans Ethiopic', ui-monospace, monospace;
+  font-size: var(--fs-micro) !important;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.dark .startup-detail { background: #0f172a; }
+.startup-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--line);
+  border-top-color: #c2410c;
+  border-radius: 50%;
+  animation: startup-spin .8s linear infinite;
+}
+@keyframes startup-spin { to { transform: rotate(360deg); } }
+
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  white-space: nowrap;
+}
+.sync-badge i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #94a3b8;
+}
+.sync-ready i   { background: #16a34a; }
+.sync-saving i  { background: #c2410c; animation: startup-spin 1s linear infinite; border-radius: 2px; }
+.sync-error     { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+.sync-error i   { background: #dc2626; }
+.sync-offline   { color: #b45309; border-color: #fde68a; background: #fffbeb; }
+.sync-offline i { background: #d97706; }
+.dark .sync-badge { background: #1e293b; }
+.dark .sync-error { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+.dark .sync-offline { background: #451a03; border-color: #78350f; color: #fde68a; }
+
+/* --- 10. Sign-in / first-run screen --------------------------- */
+.auth-card { align-items: stretch; text-align: left; width: min(100%, 420px); }
+.auth-card .brand, .auth-card h2, .auth-card > p:first-of-type { text-align: center; }
+.auth-card label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-small); font-weight: 700; color: var(--muted); }
+.auth-card input { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px; background: var(--paper); color: var(--ink); font-size: var(--fs-med); }
+.auth-card .primary-button { justify-content: center; margin-top: 4px; }
+.auth-error { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 10px; margin: 0; font-size: var(--fs-small) !important; }
+.dark .auth-error { background: #450a0a; border-color: #7f1d1d; color: #fecaca; }
+
+/* --- 11. Long unbroken names in narrow panels -----------------
+   A customer or product name with no spaces (or a very long token)
+   could push past the receipt/summary lines on narrow windows. */
+/* Elements holding user-entered text: `anywhere` so the box can shrink
+   below the width of one long unbroken word. */
+.activity-copy small,
+.activity-copy b,
+.receipt-copy small,
+.receipt-copy b,
+.report-summary-list strong,
+.notifications-dropdown li small,
+.mini-product,
+.purchase-product small,
+.stock-info small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Fixed UI labels: `break-word`, never `anywhere`. `anywhere` also shrinks
+   an element's min-content width, which let short labels be squeezed and
+   hyphen-free-broken mid-word - Settings showed "Addre/ss" and "Branc/h". */
+.report-summary-list span,
+.sale-summary span,
+.settings-list span {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.activity-copy,
+.activity-row,
+.receipt-copy,
+.report-summary-list > div,
+.sale-summary > div {
+  min-width: 0;
+  gap: 8px;
+}
+
+/* --- 12. Readable secondary text ------------------------------
+   #94a3b8 on white is 2.56:1 — well under the 4.5:1 body text needs,
+   and it was being used for 9-11px table headers and captions read on
+   cheap shop screens in daylight. #64748b gives 4.76:1. The sidebar is
+   deliberately left alone: there the same grey sits on navy at 6.96:1. */
+th,
+.breadcrumb,
+.more-button,
+.directory-count,
+.inventory-toolbar > span,
+td small,
+.activity-copy small,
+.quick-action small,
+.receipt-copy small,
+.purchase-product small,
+.stock-info small,
+.stock-qty small,
+.report-banner-date,
+.notifications-dropdown li small,
+.lang-option small {
+  color: #64748b;
+}
+.dark th,
+.dark .breadcrumb,
+.dark .more-button,
+.dark .directory-count,
+.dark .inventory-toolbar > span,
+.dark td small,
+.dark .activity-copy small,
+.dark .quick-action small,
+.dark .receipt-copy small,
+.dark .purchase-product small,
+.dark .stock-info small,
+.dark .stock-qty small,
+.dark .report-banner-date,
+.dark .notifications-dropdown li small,
+.dark .lang-option small {
+  color: var(--muted);
+}
+
+/* The "Detail" button hardcodes a white background, and the dark theme's
+   blanket `.dark button { color: #fff }` then painted white text on it —
+   contrast 1.0, the label was invisible. */
+.dark .detail-button {
+  background: #1e293b;
+  border-color: #334155;
+  color: #fdba74;
+}
+
+/* Recharts colours legend labels with the series colour, which put small
+   text at 2.15:1 on white. The swatch carries the hue; the label reads as
+   body text. Recharts sets this inline, so it needs !important. */
+.recharts-legend-item-text {
+  color: var(--ink) !important;
+}
+
+/* The expense grouping rows hardcode light backgrounds, so the dark theme's
+   white table text landed on near-white — the subtotal lines were invisible.
+   These only render once a shop has expenses, which is why earlier passes
+   over an empty shop never surfaced them. */
+.dark .expense-group-head td {
+  background: #0f172a;
+  color: #ffffff;
+  border-top-color: #334155;
+}
+.dark .expense-group-total td,
+.dark .expense-grand-total td {
+  background: #1e293b;
+  color: #ffffff;
+  border-top-color: #334155;
+}
+.dark .expense-out {
+  color: #fca5a5;
+}
+
+/* --- 13. Units, supplier credit ------------------------------- */
+/* "/ pc" beside a cost: the price is per piece (or meter), not per pack. */
+.per-unit { color: var(--muted); font-weight: 600; font-size: var(--fs-micro); }
+/* Due dates under an amount owed. */
+.due-note { display: block; margin-top: 4px; font-size: var(--fs-micro); color: var(--muted); }
+.due-note.overdue { color: #b91c1c; font-weight: 700; }
+.dark .due-note.overdue { color: #fca5a5; }
+/* The sell-by and payment choices span the full form width. */
+.sell-by, .modal-form-grid > .payment-choice { grid-column: 1 / -1; }
+.owed-total strong { color: #b91c1c; }
+.dark .owed-total strong { color: #fca5a5; }
+
+/* --- 14. Items table width, modal controls in dark mode ---------
+   Items: the stock column now says "999 cartons + 95 pcs" and the cost
+   says "/ pc", and with a long brand or category the row no longer fit;
+   Edit/Delete slid past the card edge on a 1024-1440px window. Brand and
+   category are free text, so they wrap; the panel scrolls as a last resort. */
+.inventory-panel { overflow-x: auto; }
+.inventory-panel td:nth-child(2),
+.inventory-panel td:nth-child(3) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 90px;
+  max-width: 220px;
+}
+
+/* "Optional" hints were #94a3b8 on white: 2.6:1. */
+.optional { color: #64748b; }
+
+/* Dark mode: the sale/purchase forms kept light backgrounds on the product
+   list and the option buttons, and white dark-mode text sat on them —
+   "Paid in full", "Single piece" and the product names were invisible.
+   Labels were light-theme slate on the dark card (1.9:1). */
+.dark .modal label,
+.dark .payment-choice > span,
+.dark .credit-partial-input label { color: #cbd5e1; }
+.dark .optional { color: #94a3b8; }
+.dark .product-results,
+.dark .product-empty { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+.dark .product-option { background: #1e293b; color: #ffffff; }
+.dark .product-option:hover { background: #334155; border-color: #475569; }
+.dark .product-option.selected { background: #431407; border-color: #fb923c; box-shadow: inset 0 0 0 1px #fb923c; }
+.dark .product-option-meta { color: #cbd5e1; }
+.dark .product-search-input { background: #0f172a; border-color: #334155; color: #ffffff; }
+.dark .product-picked,
+.dark .product-selected-hint { background: #431407; border-color: #9a3412; color: #fed7aa; }
+.dark .product-picked small { color: #fed7aa; }
+.dark .product-selected-hint b { color: #ffffff; }
+.dark .payment-option { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+.dark .payment-option.active { background: #431407; border-color: #fb923c; color: #ffedd5; box-shadow: inset 0 0 0 1px #fb923c; }
+.dark .credit-option-btn { background: #0f172a; border-color: #334155; }
+.dark .credit-option-btn:hover { background: #1e293b; border-color: #475569; }
+.dark .credit-option-btn.active { background: #431407; border-color: #fb923c; }
+.dark .credit-option-btn b { color: #ffffff; }
+.dark .credit-option-btn small { color: #cbd5e1; }
+.dark .sale-summary div,
+.dark .form-total { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+.dark .sale-summary span { color: #cbd5e1; }
+.dark .segmented-control { background: #0f172a; }
+.dark .segmented-control button { color: #cbd5e1; }
+.dark .segmented-control button:hover { background: #1e293b; color: #ffffff; }
+.dark .segmented-control button.active { background: #ffffff; color: #0f172a; }
+.dark .form-message { color: #fdba74; }
+/* On a 1024px window the Items card is ~740px wide. Let the stock pill
+   break onto two lines ("999 cartons / + 95 pcs") and tighten padding. */
+@media (max-width: 1180px) {
+  .inventory-panel td:nth-child(4),
+  .inventory-panel td:nth-child(4) * { white-space: normal; }
+  .inventory-panel td:nth-child(4) { min-width: 96px; }
+  .inventory-panel th,
+  .inventory-panel td { padding-left: 7px; padding-right: 7px; }
+}
+/* Amber warnings: #b45309 is 5:1 on white but 2.9:1 on the dark card. */
+.warn-note, .form-message.warn-note { color: #b45309; }
+.dark .warn-note, .dark .form-message.warn-note { color: #fbbf24; }
+/* The generic ".modal input" padding overrode the search box's left
+   padding, so the magnifier sat on top of the placeholder text. */
+.modal .product-search-input { padding-left: 34px; }
+.dark .close-button { background: #0f172a; border-color: #334155; color: #ffffff; }
+/* Suppliers: contact and phone are free text; let them wrap so the
+   "Pay supplier" button stays inside the card. */
+.suppliers-panel td:nth-child(2),
+.suppliers-panel td:nth-child(3) { white-space: normal; overflow-wrap: anywhere; min-width: 90px; max-width: 200px; }
+/* Purchases gained a Payment column; supplier names and carton quantities
+   wrap so the row menu (•••) stays visible. */
+.purchase-table td:nth-child(2),
+.purchase-table td:nth-child(4) { white-space: normal; overflow-wrap: anywhere; min-width: 90px; max-width: 190px; }
+.purchase-table td:nth-child(4) .quantity-pill { display: inline-block; white-space: normal; }
+/* Supplier row: "Pay supplier" and "PDF" side by side. */
+.row-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+/* Sort menus on Purchases and Sales. */
+.sort-select { min-width: 140px; }
+
+/* --- 15. iCloud backup and restore ------------------------------ */
+.icloud-status { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); background: #f8fafc; margin-bottom: 12px; }
+.icloud-status b { display: block; color: var(--ink); font-size: var(--fs-med, 13px); }
+.icloud-status small { display: block; margin-top: 4px; color: #475569; font-size: var(--fs-small, 12px); line-height: 1.5; }
+.icloud-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex: none; background: #16a34a; }
+.icloud-status.warn { background: #fffbeb; border-color: #fde68a; }
+.icloud-status.warn .icloud-dot { background: #d97706; }
+.dark .icloud-status { background: #0f172a; border-color: #334155; }
+.dark .icloud-status small { color: #cbd5e1; }
+.dark .icloud-status.warn { background: #451a03; border-color: #92400e; }
+.restore-list { display: flex; flex-direction: column; gap: 6px; max-height: min(50vh, 420px); overflow-y: auto; margin-bottom: 14px; padding: 2px; }
+.restore-row { display: flex !important; flex-direction: row !important; align-items: center; gap: 12px !important; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; height: auto !important; }
+.restore-row input { width: 16px !important; height: 16px !important; margin: 0 !important; flex: none; accent-color: var(--brand); }
+.restore-row span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.restore-row b { color: var(--ink); font-size: var(--fs-med, 13px); }
+.restore-row small { color: var(--muted); font-weight: 500; }
+.restore-row.selected { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+.restore-tag { font-style: normal; align-self: flex-start; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #fef3c7; color: #92400e; }
+.dark .restore-tag { background: #451a03; color: #fde68a; }
+.restore-preview { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; background: #f8fafc; }
+.restore-preview b { color: var(--ink); font-size: 15px; }
+.restore-preview p { margin: 8px 0 0; color: #475569; font-size: var(--fs-body, 13px); line-height: 1.5; }
+.dark .restore-preview { background: #0f172a; border-color: #334155; }
+.dark .restore-preview p { color: #cbd5e1; }
+.dark .restore-preview p.warn-note { color: #fbbf24; }
+/* Settings labels ("Owner name", "Address", "Branch") still broke mid-word
+   because the editable value beside them claimed the space first. The
+   label keeps its natural width; the value shrinks and wraps instead. */
+.settings-list div > span:first-child { flex: none; white-space: nowrap; }
+.settings-list div > :last-child { min-width: 0; overflow-wrap: anywhere; }
+/* The branch name is a label, not a menu (the app has one branch). */
+.branch-label { cursor: default; }
+.dark .branch-label { color: #ffffff; }
+
+/* --- 16. Narrow window / heavy zoom: the menu button opens the sidebar --- */
+.nav-scrim { display: none; }
+@media (max-width: 700px) {
+  .app-shell.nav-open .sidebar { display: flex; position: fixed; top: 0; left: 0; bottom: 0; width: min(260px, 85vw); z-index: 30; overflow-y: auto; box-shadow: 0 0 40px rgba(15, 23, 42, .35); }
+  .app-shell.nav-open .nav-scrim { display: block; position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 29; }
+}
+/* Notification rows are real buttons now (they open the page). */
+.notification-item { all: unset; display: block; width: 100%; cursor: pointer; line-height: 1.45; }
+.notifications-dropdown li:has(.notification-item) { padding: 0; }
+.notifications-dropdown li .notification-item { padding: 12px 16px; box-sizing: border-box; }
+.notification-item:focus-visible { outline: 2px solid var(--brand-light, #ea580c); outline-offset: -2px; }
+.dark .notifications-dropdown li { color: #cbd5e1; border-color: #334155; }
+.dark .notifications-dropdown li:hover { background: #0f172a; }
+.dark .notifications-dropdown li b { color: #ffffff; }
+.dark .notifications-dropdown li small, .dark .notifications-heading { color: #94a3b8; }
+/* Selling price under the cost in the Items list. */
+.sell-line { display: block; margin-top: 3px; color: var(--muted); font-size: var(--fs-micro); font-weight: 600; }
+.inventory-panel .sell-line { white-space: normal; }
+
+/* --- 17. Overview: three figure cards (stock value removed), labelled show/hide --- */
+.overview-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.figures-toggle { display: inline-flex; align-items: center; gap: 8px; }
+
+/* --- 18. FIFO item detail --- */
+.detail-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.detail-toolbar small { color: var(--muted); }
+.next-pill, .used-pill { display: inline-block; border-radius: 4px; padding: 3px 7px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.next-pill { background: #dcfce7; color: #15803d; }
+.used-pill { background: #f1f5f9; color: #64748b; }
+.dark .next-pill { background: #14532d; color: #bbf7d0; }
+.dark .used-pill { background: #1e293b; color: #cbd5e1; }
+tr.batch-used td { color: var(--muted); }
+.item-detail-modal td { white-space: nowrap; }
+/* Purchases has a Unit cost column on the Mac build: let the date/time wrap. */
+.purchase-table td:nth-child(3) { white-space: normal; min-width: 92px; max-width: 120px; }
+@media (max-width: 1320px) {
+  .purchase-table th, .purchase-table td { padding-left: 7px; padding-right: 7px; }
+}

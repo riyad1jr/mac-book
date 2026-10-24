@@ -1,0 +1,46 @@
+﻿name: Build Windows Installer
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: ./app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app (Vite + TypeScript + Server)
+        run: npm run build
+
+      - name: Build Windows installer (NSIS + Portable)
+        run: npm run dist:win
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mame-Inventory-Windows
+          path: |
+            app/tmp-release/*.exe
+            app/release/*.exe
+          if-no-files-found: warn
+          retention-days: 30
